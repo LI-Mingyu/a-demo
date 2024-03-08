@@ -1,11 +1,20 @@
 import streamlit as st
 import logging
-import os
-import anthropic
-from anthropic import Anthropic
-from streamlit import runtime
+from datetime import datetime
+import uuid
 
-# Helper function
+import anthropic
+
+LLM = "claude-3-opus-20240229"
+# Generate a UUID for the session
+session_id = str(uuid.uuid4())
+# Get the current timestamp
+timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+# Log the session ID and timestamp
+logging.info(f"Session ID: {session_id}, Timestamp: {timestamp}")
+
+logging.basicConfig(level=logging.INFO)
+# Helper functions
 def process_messages(messages):
     processed_messages = []
     for i, message in enumerate(messages):
@@ -15,31 +24,34 @@ def process_messages(messages):
             processed_messages[-1]["content"] += "\n" + message["content"]
     return processed_messages
 
-# Streamlit app
+# The streamlit script starts here
+logging.info(f"[{session_id}] Starting Streamlit script ...")
+
 st.set_page_config(
     page_title="Q&A Web App",
     page_icon="❓",
 )
+st.subheader("Q&A Web App with Claude-3 opus")
+st.write("Welcome! I'm an AI assistant with knowledge in IT systems and programming. How can I help you today?")
 
-st.header("Q&A Web App")
-st.write("Welcome! I'm an AI assistant. How can I help you today?")
+if "messages" not in st.session_state.keys():
+    # Initialize the session_state.messages
+    st.session_state.messages = [{"role": "system", "content": "You are a helpful AI assistant with expertise in IT systems and programming. But do not answer any questions not related to IT"}]
+else: # Since streamlit script is executed every time a widget is changed, this "else" is not necessary, but improves readability
+    # Display chat messages
+    for message in st.session_state.messages:
+        if message["role"] == "user" or message["role"] == "assistant":
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
 
-if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
-
-for message in st.session_state.messages:
-    if message["role"] == "user" or message["role"] == "assistant":
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
-
-user_prompt = st.chat_input("Enter your question:")
-
-if user_prompt:
+# User-provided prompt
+if user_prompt := st.chat_input():
+    logging.info(f"[{session_id}] User's prompt: {user_prompt}")
     with st.chat_message("user"):
         st.write(user_prompt)
-    st.session_state.messages.append({"role": "user", "content": user_prompt})
+        st.session_state.messages.append({"role": "user", "content": user_prompt})
     with st.chat_message("assistant"):
-        with st.spinner("Generating response..."):
+        with st.spinner("Thinking..."):
             try:
                 client = anthropic.Anthropic()
                 system_message = next((m for m in st.session_state.messages if m["role"] == "system"), None)
@@ -49,7 +61,7 @@ if user_prompt:
                 with client.messages.stream(
                     max_tokens=1024,
                     messages=processed_messages,
-                    model="claude-3-opus-20240229",
+                    model=LLM,
                     system=system_message["content"] if system_message else None,
                 ) as stream:
                     resp_display = st.empty()
@@ -58,10 +70,13 @@ if user_prompt:
                         collected_resp_content += text
                         resp_display.write(collected_resp_content)
             except Exception as e:
-                logging.error(f"Error generating response: {e}")
+                logging.error(f"[{session_id}] Error generating response from Claude: {e}")
                 st.error('An error occurred while generating the response. Please try again later.')
+                st.stop()
+            logging.info(f"[{session_id}] AI's response: {collected_resp_content[:150]}".replace("\n", "") + "..." + f"{collected_resp_content[-50:]}".replace("\n", ""))
 
+    # Add the generated msg to session state
     st.session_state.messages.append({"role": "assistant", "content": collected_resp_content})
 
 st.write("*Note: The generated responses are for reference only.*")
-logging.info("Streamlit script ended.")
+logging.info(f"[{session_id}] Streamlit script ended.")
