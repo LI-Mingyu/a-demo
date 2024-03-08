@@ -5,6 +5,9 @@ import uuid
 
 import anthropic
 
+# Set the logging level
+logging.basicConfig(level=logging.INFO)
+
 LLM = "claude-3-opus-20240229"
 # Generate a UUID for the session
 session_id = str(uuid.uuid4())
@@ -13,7 +16,6 @@ timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # Log the session ID and timestamp
 logging.info(f"Session ID: {session_id}, Timestamp: {timestamp}")
 
-logging.basicConfig(level=logging.INFO)
 # Helper functions
 def process_messages(messages):
     processed_messages = []
