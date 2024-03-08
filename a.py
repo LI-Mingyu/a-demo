@@ -35,6 +35,8 @@ for message in st.session_state.messages:
 user_prompt = st.chat_input("Enter your question:")
 
 if user_prompt:
+    with st.chat_message("user"):
+        st.write(user_prompt)
     st.session_state.messages.append({"role": "user", "content": user_prompt})
     with st.chat_message("assistant"):
         with st.spinner("Generating response..."):
