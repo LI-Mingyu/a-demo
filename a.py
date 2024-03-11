@@ -38,7 +38,7 @@ st.write("Welcome! I'm an AI assistant with knowledge in IT systems and programm
 
 if "messages" not in st.session_state.keys():
     # Initialize the session_state.messages
-    st.session_state.messages = [{"role": "system", "content": "You are a helpful AI assistant with expertise in IT systems and programming. But do not answer any questions not related to IT"}]
+    st.session_state.messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
 else: # Since streamlit script is executed every time a widget is changed, this "else" is not necessary, but improves readability
     # Display chat messages
     for message in st.session_state.messages:
